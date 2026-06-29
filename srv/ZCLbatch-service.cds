@@ -75,12 +75,36 @@ annotate BatchMergeService.DeliveryHeaders with @(
         Title:          { Value: deliveryDocument },
         Description:    { Value: shipToPartyName }
     },
+    UI.FieldGroup#GeneralInfo: {
+        Label: 'General Info',
+        Data: [
+            { Value: deliveryDocument,     Label: 'Delivery Document'  },
+            { Value: documentDate,         Label: 'Document Date'      },
+            { Value: shipToParty,          Label: 'Ship-To Party'      },
+            { Value: totalWeight,          Label: 'Total Weight'       },
+            { Value: weightUnit,           Label: 'Unit'               },
+            { Value: deliveryDocumentType, Label: 'Delivery Type'      }
+        ]
+    },
     UI.Facets: [
         {
-            $Type:  'UI.ReferenceFacet',
-            ID:     'DeliveryItemsSection',
-            Label:  'Delivery Items',
-            Target: 'deliveryItems/@UI.LineItem'
+            $Type: 'UI.CollectionFacet',
+            ID:    'DeliveryDetails',
+            Label: 'Delivery Details',
+            Facets: [
+                {
+                    $Type:  'UI.ReferenceFacet',
+                    ID:     'GeneralInfoSection',
+                    Label:  'General Info',
+                    Target: '@UI.FieldGroup#GeneralInfo'
+                },
+                {
+                    $Type:  'UI.ReferenceFacet',
+                    ID:     'DeliveryItemsSection',
+                    Label:  'Delivery Items',
+                    Target: 'deliveryItems/@UI.LineItem'
+                }
+            ]
         }
     ]
 );
