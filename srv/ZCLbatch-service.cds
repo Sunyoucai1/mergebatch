@@ -27,12 +27,13 @@ service BatchMergeService @(path: '/batchmerge') {
 // ─── Field immutability ───────────────────────────────────────────────────────
 
 annotate BatchMergeService.DeliveryHeaders with {
-    deliveryDocument @Core.Immutable;
-    documentDate     @Core.Immutable;
-    shipToParty      @Core.Immutable;
-    shipToPartyName  @Core.Immutable;
-    totalWeight      @Core.Immutable;
-    weightUnit       @Core.Immutable;
+    deliveryDocument     @Core.Immutable;
+    documentDate         @Core.Immutable;
+    shipToParty          @Core.Immutable;
+    shipToPartyName      @Core.Immutable;
+    totalWeight          @Core.Immutable;
+    weightUnit           @Core.Immutable;
+    deliveryDocumentType @Core.Immutable;
 }
 
 annotate BatchMergeService.DeliveryItems with {
@@ -82,11 +83,12 @@ annotate BatchMergeService.DeliveryHeaders with @(
     UI.FieldGroup#GeneralInfo: {
         Label: 'General Info',
         Data: [
-            { Value: deliveryDocument, Label: 'Delivery Document' },
-            { Value: documentDate,     Label: 'Document Date'     },
-            { Value: shipToParty,      Label: 'Ship-To Party'     },
-            { Value: totalWeight,      Label: 'Total Weight'      },
-            { Value: weightUnit,       Label: 'Unit'              }
+            { Value: deliveryDocument,     Label: 'Delivery Document'  },
+            { Value: documentDate,         Label: 'Document Date'      },
+            { Value: shipToParty,          Label: 'Ship-To Party'      },
+            { Value: totalWeight,          Label: 'Total Weight'       },
+            { Value: weightUnit,           Label: 'Unit'               },
+            { Value: deliveryDocumentType, Label: 'Delivery Type'      }
         ]
     },
     UI.Facets: [

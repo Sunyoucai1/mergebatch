@@ -93,12 +93,13 @@ async function syncDelivery(deliveryDocument) {
     const itemResults = itemData?.d?.results ?? itemData?.value ?? [];
 
     const headerToUpsert = {
-        deliveryDocument: hdr.DeliveryDocument,
-        documentDate:     parseDate(hdr.DocumentDate),
-        shipToParty:      hdr.ShipToParty       ?? '',
-        shipToPartyName:  hdr.ShipToParty        ?? '',
-        totalWeight:      parseFloat(hdr.HeaderGrossWeight) || 0,
-        weightUnit:       hdr.HeaderWeightUnit   ?? '',
+        deliveryDocument:     hdr.DeliveryDocument,
+        documentDate:         parseDate(hdr.DocumentDate),
+        shipToParty:          hdr.ShipToParty              ?? '',
+        shipToPartyName:      hdr.ShipToParty              ?? '',
+        totalWeight:          parseFloat(hdr.HeaderGrossWeight) || 0,
+        weightUnit:           hdr.HeaderWeightUnit         ?? '',
+        deliveryDocumentType: hdr.DeliveryDocumentType     ?? '',
     };
 
     const itemsToUpsert = itemResults.map(item => ({

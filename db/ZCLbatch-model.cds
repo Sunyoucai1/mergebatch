@@ -5,8 +5,9 @@ entity ZCLDeliveryHeaders {
         documentDate         : Date;
         shipToParty          : String(10);
         shipToPartyName      : String(80);
-        totalWeight          : Decimal(15,3);
-        weightUnit           : String(3);
+        totalWeight              : Decimal(15,3);
+        weightUnit               : String(3);
+        deliveryDocumentType     : String(4);
         deliveryItems        : Composition of many ZCLDeliveryItems
                                on deliveryItems.deliveryDocument = deliveryDocument;
 }
