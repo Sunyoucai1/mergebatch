@@ -1,0 +1,135 @@
+{
+  "_version": "1.65.0",
+  "sap.app": {
+    "id": "com.riotinto.s4.batch.batchmerge",
+    "type": "application",
+    "title": "Batch Merge",
+    "description": "Manage Batch Merge for outbound deliveries",
+    "applicationVersion": { "version": "1.0.0" },
+    "dataSources": {
+      "mainService": {
+        "uri": "/batchmerge/",
+        "type": "OData",
+        "settings": {
+          "annotations": [],
+          "odataVersion": "4.0"
+        }
+      }
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "icons": {},
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": false
+    }
+  },
+  "sap.ui5": {
+    "flexEnabled": true,
+    "dependencies": {
+      "minUI5Version": "1.120.0",
+      "libs": {
+        "sap.m": {},
+        "sap.ui.core": {},
+        "sap.fe.templates": {}
+      }
+    },
+    "models": {
+      "": {
+        "dataSource": "mainService",
+        "settings": {
+          "autoExpandSelect": true,
+          "earlyRequests": true
+        }
+      },
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "settings": {
+          "bundleName": "zcpelbatchmerge.i18n.i18n"
+        }
+      }
+    },
+    "routing": {
+      "config": {
+        "routerClass": "sap.fe.core.AppComponent"
+      },
+      "routes": [
+        {
+          "pattern": ":?query:",
+          "name": "DeliveryHeadersList",
+          "target": "DeliveryHeadersList"
+        },
+        {
+          "pattern": "DeliveryHeaders({key}):?query:",
+          "name": "DeliveryHeadersObjectPage",
+          "target": "DeliveryHeadersObjectPage"
+        }
+      ],
+      "targets": {
+        "DeliveryHeadersList": {
+          "type": "Component",
+          "id": "DeliveryHeadersList",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "contextPath": "/DeliveryHeaders",
+              "initialLoad": true,
+              "hideFilterBar": false,
+              "controlConfiguration": {
+                "@com.sap.vocabularies.UI.v1.SelectionFields": {
+                  "filterFields": {
+                    "$editingStatus": {
+                      "availability": "Hidden"
+                    }
+                  }
+                },
+                "@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable",
+                    "selectionMode": "None"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "DeliveryHeadersObjectPage": {
+          "type": "Component",
+          "id": "DeliveryHeadersObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "contextPath": "/DeliveryHeaders",
+              "editableHeaderContent": false,
+              "controlConfiguration": {
+                "deliveryItems/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable",
+                    "selectionMode": "None"
+                  }
+                }
+              },
+              "content": {
+                "header": {
+                  "visible": true,
+                  "anchorBarVisible": true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "extends": {
+      "extensions": {
+        "sap.ui.controllerExtensions": {
+          "sap.fe.templates.ObjectPage.ObjectPageController": {
+            "controllerName": "zcpelbatchmerge.ext.controller.ObjectPageExt"
+          }
+        }
+      }
+    }
+  }
+}

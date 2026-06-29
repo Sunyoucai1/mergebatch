@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/I328131/Desktop/FS/BTP/ZPOD/ZPOD/srv/**)"
+    ]
+  }
+}

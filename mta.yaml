@@ -1,0 +1,46 @@
+_schema-version: '3.1'
+ID: zcpelbatchmerge
+version: 1.0.0
+description: Batch Merge App for Outbound Deliveries
+
+modules:
+  - name: zcpelbatchmerge-srv
+    type: nodejs
+    path: .
+    build-parameters:
+      builder: custom
+      commands:
+        - npm ci --production
+      supported-platforms: []
+    parameters:
+      buildpack: nodejs_buildpack
+      memory: 256M
+      disk-quota: 512M
+    properties:
+      NODE_ENV: production
+      SCC_LOCATION_ID: rise-backend
+    requires:
+      - name: zcpelbatchmerge-auth
+      - name: zcpelbatchmerge-connectivity
+      - name: zcpelbatchmerge-destination
+
+resources:
+  - name: zcpelbatchmerge-auth
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: ams
+      service-plan: standard
+      config:
+        appName: zcpelbatchmerge
+
+  - name: zcpelbatchmerge-connectivity
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: connectivity
+      service-plan: lite
+
+  - name: zcpelbatchmerge-destination
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: destination
+      service-plan: lite

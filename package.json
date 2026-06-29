@@ -1,0 +1,43 @@
+{
+  "name": "zcpelbatchmerge",
+  "version": "1.0.0",
+  "description": "Batch Merge for Outbound Deliveries",
+  "dependencies": {
+    "@sap-cloud-sdk/http-client": "^4",
+    "@sap-cloud-sdk/resilience": "^4.7.0",
+    "@sap/cds": "^9",
+    "@sap/xsenv": "^5",
+    "express": "^4",
+    "@sap-cloud-sdk/connectivity": "^4"
+  },
+  "devDependencies": {
+    "@cap-js/sqlite": "^2",
+    "@sap/cds-dk": "^9"
+  },
+  "scripts": {
+    "start": "cds-serve",
+    "watch": "cds watch"
+  },
+  "cds": {
+    "requires": {
+      "auth": {
+        "[production]": { "kind": "ams" },
+        "kind": "mocked"
+      },
+      "ZAPI_OUTBOUND_DELIVERY_SRV2": {
+        "kind": "odata-v2",
+        "model": "srv/external/ZAPI_OUTBOUND_DELIVERY_SRV2",
+        "credentials": {
+          "destination": "RD1CLNT510_HTTPS",
+          "path": "/sap/opu/odata/sap/API_OUTBOUND_DELIVERY_SRV;v=0002"
+        }
+      },
+      "S4_HTTP": {
+        "kind": "rest",
+        "credentials": {
+          "destination": "RD1CLNT510_HTTPS"
+        }
+      }
+    }
+  }
+}
