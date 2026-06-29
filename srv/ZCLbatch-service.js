@@ -76,57 +76,29 @@ function parseDate(val) {
 
 // ─── S/4 Sync (rate-limited to once per 5 min) ───────────────────────────────
 
-let lastSyncAt = 0;
-const SYNC_TTL = 300_000;
+async function syncDelivery(deliveryDocument) {
+    // Fetch header
+    const hdrData = await s4Get(
+        `/sap/opu/odata/sap/API_OUTBOUND_DELIVERY_SRV;v=0002/A_OutbDeliveryHeader('${deliveryDocument}')?$format=json`
+    );
+    const hdr = hdrData?.d ?? hdrData;
+    if (!hdr?.DeliveryDocument) return;
 
-async function syncFromS4() {
-    const now = Date.now();
-    if (now - lastSyncAt < SYNC_TTL) return;
-    lastSyncAt = now;
-
-    // Fetch items that have batch splits (HigherLevelItem filled = batch split child item)
-    // We fetch all items from deliveries that have GI posted (GoodsMovementStatus = 'C')
-    // and select relevant $expand to get batch info
-    const itemFilter = encodeURIComponent("GoodsMovementStatus eq 'C'");
-    const itemData = await s4Get(
+    // Fetch items for this delivery
+    const itemFilter = encodeURIComponent(`DeliveryDocument eq '${deliveryDocument}'`);
+    const itemData   = await s4Get(
         `/sap/opu/odata/sap/API_OUTBOUND_DELIVERY_SRV;v=0002/A_OutbDeliveryItem?$filter=${itemFilter}&$format=json`
     );
     const itemResults = itemData?.d?.results ?? itemData?.value ?? [];
-    if (!itemResults.length) return;
 
-    const deliveryDocs = [...new Set(itemResults.map(r => r.DeliveryDocument))];
-    const hdrFilter    = encodeURIComponent(deliveryDocs.map(d => `DeliveryDocument eq '${d}'`).join(' or '));
-    const hdrData      = await s4Get(
-        `/sap/opu/odata/sap/API_OUTBOUND_DELIVERY_SRV;v=0002/A_OutbDeliveryHeader?$filter=${hdrFilter}&$format=json`
-    );
-    const hdrResults = hdrData?.d?.results ?? hdrData?.value ?? [];
-
-    // Fetch ship-to names from partner data for each unique ShipToParty
-    const shipToParties = [...new Set(hdrResults.map(h => h.ShipToParty).filter(Boolean))];
-    const shipToNameMap = new Map();
-    for (const party of shipToParties) {
-        try {
-            const partnerFilter = encodeURIComponent(`SDDocument eq '${hdrResults.find(h => h.ShipToParty === party)?.DeliveryDocument}' and PartnerFunction eq 'WE'`);
-            const partnerData   = await s4Get(
-                `/sap/opu/odata/sap/API_OUTBOUND_DELIVERY_SRV;v=0002/A_OutbDeliveryPartner?$filter=${partnerFilter}&$expand=to_Address2&$format=json`
-            );
-            const partner = (partnerData?.d?.results ?? partnerData?.value ?? [])[0];
-            if (partner?.to_Address2?.BusinessPartnerName1) {
-                shipToNameMap.set(party, partner.to_Address2.BusinessPartnerName1);
-            }
-        } catch (e) {
-            // name enrichment is best-effort
-        }
-    }
-
-    const headersToUpsert = hdrResults.map(hdr => ({
+    const headerToUpsert = {
         deliveryDocument: hdr.DeliveryDocument,
         documentDate:     parseDate(hdr.DocumentDate),
-        shipToParty:      hdr.ShipToParty      ?? '',
-        shipToPartyName:  shipToNameMap.get(hdr.ShipToParty) ?? hdr.ShipToParty ?? '',
+        shipToParty:      hdr.ShipToParty       ?? '',
+        shipToPartyName:  hdr.ShipToParty        ?? '',
         totalWeight:      parseFloat(hdr.HeaderGrossWeight) || 0,
-        weightUnit:       hdr.HeaderWeightUnit ?? '',
-    }));
+        weightUnit:       hdr.HeaderWeightUnit   ?? '',
+    };
 
     const itemsToUpsert = itemResults.map(item => ({
         deliveryDocument:             item.DeliveryDocument,
@@ -141,9 +113,9 @@ async function syncFromS4() {
         plant:                        item.Plant                        ?? '',
     }));
 
-    await UPSERT.into(DH).entries(headersToUpsert);
-    await UPSERT.into(DI).entries(itemsToUpsert);
-    console.log(`[BATCH] Synced ${headersToUpsert.length} headers, ${itemsToUpsert.length} items from S/4`);
+    await UPSERT.into(DH).entries([headerToUpsert]);
+    if (itemsToUpsert.length) await UPSERT.into(DI).entries(itemsToUpsert);
+    console.log(`[BATCH] Synced delivery ${deliveryDocument}: ${itemsToUpsert.length} items`);
 }
 
 // ─── Service ──────────────────────────────────────────────────────────────────
@@ -151,7 +123,14 @@ async function syncFromS4() {
 module.exports = cds.service.impl(async function () {
 
     this.before('READ', 'DeliveryHeaders', async (req) => {
-        try { await syncFromS4(); }
+        // Only sync when user filters by a specific DeliveryDocument
+        const filter = req.query?.SELECT?.where;
+        if (!filter) return;
+        const filterStr = JSON.stringify(filter);
+        const match = filterStr.match(/"deliveryDocument"[^}]*"val"\s*:\s*"([^"]+)"/);
+        if (!match) return;
+        const deliveryDocument = match[1];
+        try { await syncDelivery(deliveryDocument); }
         catch (err) { console.error('[BATCH] S/4 sync failed:', err.message); }
     });
 
