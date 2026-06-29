@@ -57,11 +57,12 @@ annotate BatchMergeService.DeliveryHeaders with @(
         shipToParty
     ],
     UI.LineItem: [
-        { Value: deliveryDocument, Label: 'OD Number'      },
-        { Value: shipToParty,      Label: 'Ship-To'        },
-        { Value: documentDate,     Label: 'Document Date'  },
-        { Value: totalWeight,      Label: 'Total Weight'   },
-        { Value: weightUnit,       Label: 'Unit'           }
+        { Value: deliveryDocument,     Label: 'OD Number'      },
+        { Value: deliveryDocumentType, Label: 'Document Type'  },
+        { Value: shipToParty,          Label: 'Ship-To'        },
+        { Value: documentDate,         Label: 'Document Date'  },
+        { Value: totalWeight,          Label: 'Total Weight'   },
+        { Value: weightUnit,           Label: 'Unit'           }
     ]
 );
 
