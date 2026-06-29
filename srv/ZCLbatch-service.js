@@ -88,18 +88,16 @@ async function syncFromS4() {
     // We fetch all items from deliveries that have GI posted (GoodsMovementStatus = 'C')
     // and select relevant $expand to get batch info
     const itemFilter = encodeURIComponent("GoodsMovementStatus eq 'C'");
-    const itemSelect = encodeURIComponent('DeliveryDocument,DeliveryDocumentItem,Material,ActualDeliveryQuantity,DeliveryQuantityUnit,Batch,DeliveryDocumentItemCategory,HigherLevelItem,StorageLocation,Plant');
     const itemData = await s4Get(
-        `/sap/opu/odata/sap/API_OUTBOUND_DELIVERY_SRV;v=0002/A_OutbDeliveryItem?$filter=${itemFilter}&$select=${itemSelect}&$format=json`
+        `/sap/opu/odata/sap/API_OUTBOUND_DELIVERY_SRV;v=0002/A_OutbDeliveryItem?$filter=${itemFilter}&$format=json`
     );
     const itemResults = itemData?.d?.results ?? itemData?.value ?? [];
     if (!itemResults.length) return;
 
     const deliveryDocs = [...new Set(itemResults.map(r => r.DeliveryDocument))];
     const hdrFilter    = encodeURIComponent(deliveryDocs.map(d => `DeliveryDocument eq '${d}'`).join(' or '));
-    const hdrSelect    = encodeURIComponent('DeliveryDocument,DocumentDate,ShipToParty,HeaderGrossWeight,HeaderWeightUnit');
     const hdrData      = await s4Get(
-        `/sap/opu/odata/sap/API_OUTBOUND_DELIVERY_SRV;v=0002/A_OutbDeliveryHeader?$filter=${hdrFilter}&$select=${hdrSelect}&$format=json`
+        `/sap/opu/odata/sap/API_OUTBOUND_DELIVERY_SRV;v=0002/A_OutbDeliveryHeader?$filter=${hdrFilter}&$format=json`
     );
     const hdrResults = hdrData?.d?.results ?? hdrData?.value ?? [];
 
