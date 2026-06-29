@@ -77,6 +77,7 @@ function parseDate(val) {
 // ─── S/4 Sync (rate-limited to once per 5 min) ───────────────────────────────
 
 async function syncDelivery(deliveryDocument) {
+    console.log(`[BATCH] Syncing delivery ${deliveryDocument} from S/4...`);
     // Fetch header
     const hdrData = await s4Get(
         `/sap/opu/odata/sap/API_OUTBOUND_DELIVERY_SRV;v=0002/A_OutbDeliveryHeader('${deliveryDocument}')?$format=json`
@@ -118,18 +119,43 @@ async function syncDelivery(deliveryDocument) {
     console.log(`[BATCH] Synced delivery ${deliveryDocument}: ${itemsToUpsert.length} items`);
 }
 
+function extractFieldFromWhere(where, fieldName) {
+    if (!where) return null;
+    const flat = Array.isArray(where) ? where : [where];
+    for (const node of flat) {
+        if (!node || typeof node !== 'object') continue;
+        if (node.ref && node.ref[0] === fieldName) continue; // ref node, value is next sibling
+        // Pattern: [{ref:[fieldName]}, '=', {val:'...'}]
+        if (Array.isArray(node)) {
+            const val = extractFieldFromWhere(node, fieldName);
+            if (val) return val;
+        }
+        const keys = Object.keys(node);
+        for (const k of keys) {
+            if (Array.isArray(node[k])) {
+                const val = extractFieldFromWhere(node[k], fieldName);
+                if (val) return val;
+            }
+        }
+    }
+    // Walk flat array looking for ref+val pattern
+    for (let i = 0; i < flat.length - 2; i++) {
+        const a = flat[i], op = flat[i+1], b = flat[i+2];
+        if (a?.ref?.[0] === fieldName && (op === '=' || op === 'eq') && b?.val !== undefined)
+            return String(b.val);
+        if (b?.ref?.[0] === fieldName && (op === '=' || op === 'eq') && a?.val !== undefined)
+            return String(a.val);
+    }
+    return null;
+}
+
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 module.exports = cds.service.impl(async function () {
 
     this.before('READ', 'DeliveryHeaders', async (req) => {
-        // Only sync when user filters by a specific DeliveryDocument
-        const filter = req.query?.SELECT?.where;
-        if (!filter) return;
-        const filterStr = JSON.stringify(filter);
-        const match = filterStr.match(/"deliveryDocument"[^}]*"val"\s*:\s*"([^"]+)"/);
-        if (!match) return;
-        const deliveryDocument = match[1];
+        const deliveryDocument = extractFieldFromWhere(req.query?.SELECT?.where, 'deliveryDocument');
+        if (!deliveryDocument) return;
         try { await syncDelivery(deliveryDocument); }
         catch (err) { console.error('[BATCH] S/4 sync failed:', err.message); }
     });
